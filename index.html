@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN"></html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>四川大学第二课堂签到签退二维码生成</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js" integrity="sha512-PEhlWBZBrQL7flpJPY8lXx8tIN7HWX912GzGhFTDqA3iWFrakVH3lVHomCoU9BhfKzgxfEk6EG2C3xej+9srOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root{
+            --gap:16px;
+            --card-bg:#fff;
+            --muted:#666;
+            --accent:#2b7cff;
+            --success:#1aa85a;
+            --border:#e6e9ee;
+            --radius:10px;
+        }
+        body{
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background: #f5f7fb;
+            color: #222;
+            margin: 24px;
+            display:flex;
+            justify-content:center;
+        }
+        .wrap{
+            width:100%;
+            max-width:980px;
+            background:var(--card-bg);
+            border-radius:var(--radius);
+            padding:24px;
+            box-shadow:0 6px 18px rgba(20,30,50,0.06);
+        }
+        h1{
+            font-size:18px;
+            margin:0 0 12px 0;
+        }
+        p{ color:var(--muted); margin:6px 0 12px 0; }
+        .input-row{
+            display:flex;
+            gap:12px;
+            align-items:center;
+        }
+        input[type="text"].url-input-main{
+            flex:1;
+            padding:10px 12px;
+            border:1px solid var(--border);
+            border-radius:8px;
+            font-size:14px;
+            outline:none;
+            background:#fafbfd;
+        }
+        button.primary{
+            background:var(--accent);
+            color:#fff;
+            border:0;
+            padding:10px 16px;
+            border-radius:8px;
+            cursor:pointer;
+        }
+        .qrcode-container{
+            display:flex;
+            gap:20px;
+            margin-top:20px;
+            flex-wrap:wrap;
+            justify-content:space-between;
+        }
+        .qr-card{
+            flex:1 1 320px;
+            background:#fff;
+            border-radius:10px;
+            padding:16px;
+            border:1px solid var(--border);
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            box-sizing:border-box;
+        }
+        .qr-card h3{
+            margin:0 0 10px 0;
+            font-size:16px;
+        }
+        canvas{
+            width:220px;
+            height:220px;
+            max-width:100%;
+            border-radius:6px;
+            background:#fff;
+            border:1px solid #eee;
+        }
+        .url-row{
+            margin-top:12px;
+            width:100%;
+            display:flex;
+            gap:8px;
+            align-items:center;
+        }
+        .url-row input.url-display{
+            flex:1;
+            padding:10px;
+            border:1px solid var(--border);
+            border-radius:8px;
+            font-size:13px;
+            background:#f8fafc;
+            color:#0b1a2b;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+        .copy-btn{
+            padding:8px 12px;
+            border-radius:8px;
+            border:0;
+            background:linear-gradient(180deg,var(--accent),#1e63d9);
+            color:#fff;
+            cursor:pointer;
+            font-size:13px;
+        }
+        .copy-btn.success{
+            background:var(--success);
+        }
+        .hint{ font-size:12px; color:var(--muted); margin-top:8px; text-align:center;}
+        @media (max-width:720px){
+            .qrcode-container{ flex-direction:column; }
+            .input-row{ flex-direction:column; align-items:stretch; }
+            button.primary{ width:100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>四川大学第二课堂签到签退二维码生成</h1>
+        <p>请粘贴课程报名网址：</p>
+
+        <div class="input-row">
+            <input id="registrationUrl" class="url-input-main" type="text" placeholder="粘贴报名网址链接" />
+            <button class="primary" id="generateBtn">生成二维码</button>
+        </div>
+
+        <div class="qrcode-container" aria-live="polite">
+            <div class="qr-card" id="checkInCard">
+                <h3>签到二维码</h3>
+                <canvas id="checkInQRCode"></canvas>
+                <div class="url-row">
+                    <input id="checkInUrlDisplay" class="url-display" type="text" readonly aria-label="签到链接" />
+                    <button class="copy-btn" id="copyCheckInBtn" data-target="checkInUrlDisplay">复制链接</button>
+                </div>
+            </div>
+
+            <div class="qr-card" id="checkOutCard">
+                <h3>签退二维码</h3>
+                <canvas id="checkOutQRCode"></canvas>
+                <div class="url-row">
+                    <input id="checkOutUrlDisplay" class="url-display" type="text" readonly aria-label="签退链接" />
+                    <button class="copy-btn" id="copyCheckOutBtn" data-target="checkOutUrlDisplay">复制链接</button>
+                </div>
+            </div>
+        </div>
+
+        <p class="hint">生成后可直接扫码签到/签退，或复制链接分享</p>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generateBtn');
+        const registrationInput = document.getElementById('registrationUrl');
+
+        const checkInCanvas = document.getElementById('checkInQRCode');
+        const checkOutCanvas = document.getElementById('checkOutQRCode');
+
+        const checkInUrlDisplay = document.getElementById('checkInUrlDisplay');
+        const checkOutUrlDisplay = document.getElementById('checkOutUrlDisplay');
+
+        const copyCheckInBtn = document.getElementById('copyCheckInBtn');
+        const copyCheckOutBtn = document.getElementById('copyCheckOutBtn');
+
+        function resetDisplays() {
+            // clear canvases by resizing
+            [checkInCanvas, checkOutCanvas].forEach(c => {
+                const ctx = c.getContext && c.getContext('2d');
+                if (ctx) {
+                    ctx.clearRect(0, 0, c.width, c.height);
+                }
+            });
+            checkInUrlDisplay.value = '';
+            checkOutUrlDisplay.value = '';
+        }
+
+        function buildLinksFromRegistration(urlString) {
+            try {
+                const url = new URL(urlString);
+                const params = new URLSearchParams(url.search);
+                const id = params.get('id');
+                if (!id) return null;
+                const checkInUrl = `https://zjczs.scu.edu.cn/ccylmp/pages/main/index/signing?id=${encodeURIComponent(id)}&type=in&state=1`;
+                const checkOutUrl = `https://zjczs.scu.edu.cn/ccylmp/pages/main/index/signing?id=${encodeURIComponent(id)}&type=out&state=1`;
+                return { checkInUrl, checkOutUrl };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function generateQRCodes() {
+            const registrationUrl = registrationInput.value.trim();
+            if (!registrationUrl) {
+                alert('请输入报名网址');
+                return;
+            }
+            const links = buildLinksFromRegistration(registrationUrl);
+            if (!links) {
+                alert('无效的报名网址，请检查链接是否正确并包含 id 参数');
+                resetDisplays();
+                return;
+            }
+
+            // set displays
+            checkInUrlDisplay.value = links.checkInUrl;
+            checkOutUrlDisplay.value = links.checkOutUrl;
+
+            // generate QR codes (using qrcode.min.js library that exposes QRCode.toCanvas)
+            if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+                QRCode.toCanvas(checkInCanvas, links.checkInUrl, { width: 220 }, function(err) {
+                    if (err) console.error('生成签到二维码失败', err);
+                });
+                QRCode.toCanvas(checkOutCanvas, links.checkOutUrl, { width: 220 }, function(err) {
+                    if (err) console.error('生成签退二维码失败', err);
+                });
+            } else {
+                alert('二维码库未加载，请确保 qrcode.min.js 已正确引入');
+            }
+        }
+
+        async function copyTextToClipboard(text) {
+            if (!text) return false;
+            // preferred API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    // fall through to legacy method
+                }
+            }
+            // legacy fallback
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (e) {
+                document.body.removeChild(ta);
+                return false;
+            }
+        }
+
+        function flashCopyButton(btn) {
+            btn.classList.add('success');
+            const original = btn.innerText;
+            btn.innerText = '已复制';
+            setTimeout(() => {
+                btn.classList.remove('success');
+                btn.innerText = original;
+            }, 1400);
+        }
+
+        copyCheckInBtn.addEventListener('click', async () => {
+            const text = checkInUrlDisplay.value;
+            const ok = await copyTextToClipboard(text);
+            if (ok) flashCopyButton(copyCheckInBtn);
+            else alert('复制失败，请手动复制链接');
+        });
+
+        copyCheckOutBtn.addEventListener('click', async () => {
+            const text = checkOutUrlDisplay.value;
+            const ok = await copyTextToClipboard(text);
+            if (ok) flashCopyButton(copyCheckOutBtn);
+            else alert('复制失败，请手动复制链接');
+        });
+
+        generateBtn.addEventListener('click', generateQRCodes);
+
+        // allow Enter key to trigger generation
+        registrationInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') generateQRCodes();
+        });
+    </script>
+</body>
+</html>
