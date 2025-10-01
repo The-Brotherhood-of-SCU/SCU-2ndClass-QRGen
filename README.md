@@ -8,8 +8,8 @@
 - 响应式美观界面，适配手机和电脑
 
 ## 使用方法
-1. 打开 `index.html` 文件（建议使用现代浏览器如 Chrome、Edge、Safari）
-2. 在输入框粘贴第二课堂活动的报名网址（如：https://zjczs.scu.edu.cn/ccylmp/pages/main/index/detail?id=xxxxxx）
+1. 打开 `index.html` 文件
+2. 在微信第二课堂报名页点击右上角-复制链接,在输入框粘贴第二课堂活动的报名网址（如：https://zjczs.scu.edu.cn/ccylmp/pages/main/index/detail?id=xxxxxx）
 3. 点击“生成二维码”按钮
 4. 页面下方会显示签到和签退二维码及对应链接
 5. 可扫码签到/签退，或点击“复制链接”按钮复制链接
@@ -23,7 +23,8 @@
 - 本工具仅用于学习交流，请勿用于非法用途
 
 ## 示例截图
-![示例截图](https://user-images.githubusercontent.com/your-screenshot.png)
+<img width="1494" height="791" alt="image" src="https://github.com/user-attachments/assets/547af5e8-b00d-4e7e-b91e-4eaa36a2c354" />
+
 
 ## License
 GPLv3.0
